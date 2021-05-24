@@ -47,6 +47,35 @@ app.get("/createtableadmin", (req, res) => {
   });
 });
 
+// CREATE ADMIN USER
+app.post("/createadmin", (req, res) => {
+  bcrypt.hash(req.body.password, 10, (err, hash) => {
+    if (err) {
+      return res.status(500).send({
+        error: true,
+        message: "Error while generating hash",
+        data: err,
+      });
+    } else {
+      const data = { email: req.body.email, password: hash };
+      console.log("body", data);
+      const sql = "INSERT INTO admin SET ?";
+      db.query(sql, data, (error, result) => {
+        if (error) {
+          console.log("error", error);
+        }
+        res.send("Admin created successfully");
+      });
+    }
+  });
+});
+
+// LOGIN ADMIN USER
+app.post("/createadmin", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+});
+
 // CAR TABLE
 app.get("/createtablecar", (req, res) => {
   let sql = `CREATE TABLE car(id int AUTO_INCREMENT, name VARCHAR(255), cost INT, status VARCHAR(255), PRIMARY KEY(id))`;
@@ -58,6 +87,8 @@ app.get("/createtablecar", (req, res) => {
     res.send("Table created -- car");
   });
 });
+
+// CREATE CARE
 
 // TO CREATE DB IN INITIAL PHASE
 
