@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
 const mysql = require("mysql");
+const jwt = require("jsonwebtoken");
 
 const db = mysql.createConnection({
   host: "localhost",
@@ -71,9 +72,54 @@ app.post("/createadmin", (req, res) => {
 });
 
 // LOGIN ADMIN USER
-app.post("/createadmin", (req, res) => {
+app.post("/loginadmin", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  const sql = `SELECT * FROM admin WHERE email = '${email}'`;
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.log("error", error);
+    }
+    if (result.length) {
+      // check password is valid or not
+      const userFound = result[0];
+      bcrypt.compare(
+        req.body.password,
+        userFound.password,
+        function (err, result) {
+          if (err) {
+            return res.status(500).send({
+              error: true,
+              message: "Error while comparing password",
+              data: err,
+            });
+          } else if (!result) {
+            return res.status(401).send({
+              error: true,
+              message: "Unauthorised Access",
+            });
+          } else {
+            // generate token
+            var token = jwt.sign({ _id: userFound._id }, "kleverSecret");
+            return res.status(200).send({
+              error: false,
+              message: "Logged in successfully.",
+              data: {
+                token: token,
+                userType: userFound.userType,
+                fullName: userFound.fullName,
+              },
+            });
+          }
+        }
+      );
+    } else {
+      return res.status(401).send({
+        error: true,
+        message: "Unauthorised user, Please check username and password",
+      });
+    }
+  });
 });
 
 // CAR TABLE
