@@ -24,6 +24,7 @@ const app = express();
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 
+// TO CREATE DB IN INITIAL PHASE
 // CREATE DATABASE
 app.get("/createdb", (req, res) => {
   let sql = `CREATE DATABASE carrental`;
@@ -59,7 +60,6 @@ app.post("/createadmin", (req, res) => {
       });
     } else {
       const data = { email: req.body.email, password: hash };
-      console.log("body", data);
       const sql = "INSERT INTO admin SET ?";
       db.query(sql, data, (error, result) => {
         if (error) {
@@ -83,36 +83,30 @@ app.post("/loginadmin", (req, res) => {
     if (result.length) {
       // check password is valid or not
       const userFound = result[0];
-      bcrypt.compare(
-        req.body.password,
-        userFound.password,
-        function (err, result) {
-          if (err) {
-            return res.status(500).send({
-              error: true,
-              message: "Error while comparing password",
-              data: err,
-            });
-          } else if (!result) {
-            return res.status(401).send({
-              error: true,
-              message: "Unauthorised Access",
-            });
-          } else {
-            // generate token
-            var token = jwt.sign({ _id: userFound._id }, "kleverSecret");
-            return res.status(200).send({
-              error: false,
-              message: "Logged in successfully.",
-              data: {
-                token: token,
-                userType: userFound.userType,
-                fullName: userFound.fullName,
-              },
-            });
-          }
+      bcrypt.compare(password, userFound.password, function (err, result) {
+        if (err) {
+          return res.status(500).send({
+            error: true,
+            message: "Error while comparing password",
+            data: err,
+          });
+        } else if (!result) {
+          return res.status(401).send({
+            error: true,
+            message: "Unauthorised Access",
+          });
+        } else {
+          // generate token
+          var token = jwt.sign({ _id: userFound._id }, "kleverSecret");
+          return res.status(200).send({
+            error: false,
+            message: "Logged in successfully.",
+            data: {
+              token: token,
+            },
+          });
         }
-      );
+      });
     } else {
       return res.status(401).send({
         error: true,
@@ -134,9 +128,68 @@ app.get("/createtablecar", (req, res) => {
   });
 });
 
-// CREATE CARE
+// ADD CAR
+app.post("/addcar", (req, res) => {
+  const car = { name: req.body.name, cost: req.body.cost, status: "available" };
+  const sql = "INSERT INTO car SET ?";
+  db.query(sql, car, (error, result) => {
+    if (error) {
+      console.log("error", error);
+    }
+    res.send("Car saved successfully");
+  });
+});
 
-// TO CREATE DB IN INITIAL PHASE
+// GET ALL CARS
+app.get("/allcars", (req, res) => {
+  const sql = "SELECT * FROM cars";
+  db.query(sql, (error, result) => {
+    if (error) {
+      console.log("error", error);
+    }
+    res.send({
+      error: false,
+      data: result,
+    });
+  });
+});
+
+// GET ONE CAR
+app.get("/onecar/:id", (req, res) => {
+  const sql = `SELECT * FROM cars WHERE id = ${req.params.id}`;
+  db.query(sql, (error, result) => {
+    if (error) {
+      console.log("error", error);
+    }
+    res.send({
+      error: false,
+      data: result,
+    });
+  });
+});
+
+// UPDATE CAR COST
+app.post("/updatecarcost/:id", (req, res) => {
+  const cost = req.body.cost;
+  const sql = `UPDATE car SET cost = ${cost} WHERE id = ${req.params.id}`;
+  db.query(sql, (error, result) => {
+    if (error) {
+      console.log("error", error);
+    }
+    res.send("Car updated successfully");
+  });
+});
+
+// REMOVE CAR
+app.post("/deletecar/:id", (req, res) => {
+  const sql = `DELETE FROM car WHERE id = ${req.params.id}`;
+  db.query(sql, (error, result) => {
+    if (error) {
+      console.log("error", error);
+    }
+    res.send("Car deleted successfully");
+  });
+});
 
 app.listen(3000, () => {
   console.log("Server started on port 3000");
