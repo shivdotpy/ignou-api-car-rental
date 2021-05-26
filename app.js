@@ -37,7 +37,7 @@ app.get("/createdb", (req, res) => {
   });
 });
 
-// ADMIN TABLE
+// CREATE ADMIN TABLE
 app.get("/createtableadmin", (req, res) => {
   let sql = `CREATE TABLE admin(id int AUTO_INCREMENT, email VARCHAR(255), password VARCHAR(255), PRIMARY KEY(id))`;
   db.query(sql, (error, result) => {
@@ -190,6 +190,108 @@ app.post("/deletecar/:id", (req, res) => {
     res.send("Car deleted successfully");
   });
 });
+
+// CREATE USER TABLE
+app.get("/createtableuser", (req, res) => {
+  let sql = `CREATE TABLE user(id int AUTO_INCREMENT, name VARCHAR(255), mobile VARCHAR(255), email VARCHAR(255), password VARCHAR(255), PRIMARY KEY(id))`;
+  db.query(sql, (error, result) => {
+    if (error) {
+      throw error;
+    }
+    console.log("result", result);
+    res.send("Table created -- user");
+  });
+});
+
+// CREATE USER
+app.post("/createuser", (req, res) => {
+  bcrypt.hash(req.body.password, 10, (err, hash) => {
+    if (err) {
+      return res.status(500).send({
+        error: true,
+        message: "Error while generating hash",
+        data: err,
+      });
+    } else {
+      const data = {
+        name: req.body.name,
+        mobile: req.body.mobile,
+        email: req.body.email,
+        password: hash,
+      };
+      const sql = "INSERT INTO user SET ?";
+      db.query(sql, data, (error, result) => {
+        if (error) {
+          console.log("error", error);
+        }
+        res.send("User created successfully");
+      });
+    }
+  });
+});
+
+// LOGIN USER
+app.post("/loginuser", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const sql = `SELECT * FROM user WHERE email = '${email}'`;
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.log("error", error);
+    }
+    if (result.length) {
+      // check password is valid or not
+      const userFound = result[0];
+      bcrypt.compare(password, userFound.password, function (err, result) {
+        if (err) {
+          return res.status(500).send({
+            error: true,
+            message: "Error while comparing password",
+            data: err,
+          });
+        } else if (!result) {
+          return res.status(401).send({
+            error: true,
+            message: "Unauthorised Access",
+          });
+        } else {
+          // generate token
+          var token = jwt.sign({ _id: userFound._id }, "kleverSecret");
+          return res.status(200).send({
+            error: false,
+            message: "Logged in successfully.",
+            data: {
+              token: token,
+            },
+          });
+        }
+      });
+    } else {
+      return res.status(401).send({
+        error: true,
+        message: "Unauthorised user, Please check username and password",
+      });
+    }
+  });
+});
+
+// CREATE BOOKING TABLE
+app.get("/createtablebooking", (req, res) => {
+  let sql = `CREATE TABLE booking(id int AUTO_INCREMENT, car_id int, user_id int, date DATETIME, status VARCHAR(255), PRIMARY KEY(id), FOREIGN KEY(car_id) REFERENCES car(id), FOREIGN KEY(user_id) REFERENCES user(id))`;
+  db.query(sql, (error, result) => {
+    if (error) {
+      throw error;
+    }
+    console.log("result", result);
+    res.send("Table created -- booking");
+  });
+});
+
+// CREATE BOOKING AND UPDATE CAR STATUS
+
+// CANCEL BOOKING
+
+// BOOKING COMPLETE, RELEASE CAR (UPDATE CAR STATUS)
 
 app.listen(3000, () => {
   console.log("Server started on port 3000");
