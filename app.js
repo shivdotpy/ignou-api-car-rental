@@ -262,6 +262,7 @@ app.post("/loginuser", (req, res) => {
             message: "Logged in successfully.",
             data: {
               token: token,
+              user_id: userFound.id,
             },
           });
         }
@@ -288,10 +289,72 @@ app.get("/createtablebooking", (req, res) => {
 });
 
 // CREATE BOOKING AND UPDATE CAR STATUS
+app.post("/createbooking", (req, res) => {
+  let sql = "INSERT INTO booking SET ?";
+  const data = {
+    car_id: req.body.car_id,
+    user_id: req.body.user_id,
+    date: req.body.date,
+    status: "booked",
+  };
+
+  db.query(sql, data, (error, result) => {
+    if (error) {
+      console.log("error", error);
+    }
+    res.send("Booking created successfully");
+  });
+});
+
+// GET ALL BOOKINGS
+app.get("/getallbookngs", (req, res) => {
+  const sql = "SELECT * FROM booking";
+  db.query(sql, (error, result) => {
+    if (error) {
+      console.log("error", error);
+    }
+    res.send({
+      error: false,
+      data: result,
+    });
+  });
+});
+
+// GET ONE BOOKING
+app.get("/getbooking/:id", (req, res) => {
+  const sql = `SELECT * FROM booking WHERE id = ${req.params.id}`;
+  db.query(sql, (error, result) => {
+    if (error) {
+      console.log("error", error);
+    }
+    res.send({
+      error: false,
+      data: result[0],
+    });
+  });
+});
 
 // CANCEL BOOKING
+app.get("/cancelbooking/:id", (req, res) => {
+  const sql = `UPDATE booking SET status = 'cancelled' WHERE id = ${req.params.id}`;
+  db.query(sql, (error, result) => {
+    if (error) {
+      console.log("error", error);
+    }
+    res.send("Booking cancelled successfully");
+  });
+});
 
 // BOOKING COMPLETE, RELEASE CAR (UPDATE CAR STATUS)
+app.post("/completebooking/:id", (req, res) => {
+  const sql = `UPDATE booking SET status = 'completed' WHERE id = ${req.params.id}`;
+  db.query(sql, (error, result) => {
+    if (error) {
+      console.log("error", error);
+    }
+    res.send("Booking completed successfully");
+  });
+});
 
 app.listen(3000, () => {
   console.log("Server started on port 3000");
