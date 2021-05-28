@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
 const mysql = require("mysql");
 const jwt = require("jsonwebtoken");
+const cors = require("cors");
 
 const db = mysql.createConnection({
   host: "localhost",
@@ -23,6 +24,8 @@ const app = express();
 
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
+
+app.use(cors());
 
 // TO CREATE DB IN INITIAL PHASE
 // CREATE DATABASE
@@ -142,14 +145,14 @@ app.post("/addcar", (req, res) => {
 
 // GET ALL CARS
 app.get("/allcars", (req, res) => {
-  const sql = "SELECT * FROM cars";
+  const sql = "SELECT * FROM car";
   db.query(sql, (error, result) => {
     if (error) {
       console.log("error", error);
     }
     res.send({
       error: false,
-      data: result,
+      data: result ? result : [],
     });
   });
 });
@@ -181,7 +184,7 @@ app.post("/updatecarcost/:id", (req, res) => {
 });
 
 // REMOVE CAR
-app.post("/deletecar/:id", (req, res) => {
+app.delete("/deletecar/:id", (req, res) => {
   const sql = `DELETE FROM car WHERE id = ${req.params.id}`;
   db.query(sql, (error, result) => {
     if (error) {
@@ -301,8 +304,13 @@ app.post("/createbooking", (req, res) => {
   db.query(sql, data, (error, result) => {
     if (error) {
       console.log("error", error);
+      res.send({ error: true, message: "Error while creating booking" });
+    } else {
+      let sql = `UPDATE car SET status='booked' WHERE id=${req.body.car_id}`;
+      db.query(sql);
+
+      res.send("Booking created successfully");
     }
-    res.send("Booking created successfully");
   });
 });
 
@@ -356,6 +364,6 @@ app.post("/completebooking/:id", (req, res) => {
   });
 });
 
-app.listen(3000, () => {
+app.listen(5000, () => {
   console.log("Server started on port 3000");
 });
