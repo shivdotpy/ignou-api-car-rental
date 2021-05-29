@@ -314,9 +314,23 @@ app.post("/createbooking", (req, res) => {
   });
 });
 
-// GET ALL BOOKINGS
+// GET ALL BOOKINGS -- ADMIN
 app.get("/getallbookngs", (req, res) => {
-  const sql = "SELECT * FROM booking";
+  const sql = "SELECT * FROM booking JOIN car ON booking.car_id = car.id";
+  db.query(sql, (error, result) => {
+    if (error) {
+      console.log("error", error);
+    }
+    res.send({
+      error: false,
+      data: result,
+    });
+  });
+});
+
+// GET USER BOOKINGS -- USER
+app.get("/getuserbookngs/:user_id", (req, res) => {
+  const sql = `SELECT * FROM booking JOIN car ON booking.car_id = car.id and booking.user_id = ${req.params.user_id}`;
   db.query(sql, (error, result) => {
     if (error) {
       console.log("error", error);
